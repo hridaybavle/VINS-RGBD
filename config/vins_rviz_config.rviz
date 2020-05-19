@@ -126,7 +126,7 @@ Visualization Manager:
           Head Length: 0.200000003
           Length: 0.300000012
           Line Style: Billboards
-          Line Width: 0.0299999993
+          Line Width: 0.0500000007
           Name: Path
           Offset:
             X: 0
@@ -235,7 +235,7 @@ Visualization Manager:
           Head Length: 0.200000003
           Length: 0.300000012
           Line Style: Billboards
-          Line Width: 0.0299999993
+          Line Width: 0.0500000007
           Name: pose_graph_path
           Offset:
             X: 0
@@ -451,8 +451,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: -0.373463035
-        Min Value: -2.08824492
+        Max Value: -0.0909792632
+        Min Value: -2.21224451
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -501,25 +501,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 10.4073095
+      Distance: 23.9277611
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 3.9569819
-        Y: -0.192240268
-        Z: 1.47784158e-05
+        X: 7.09971285
+        Y: -0.209256709
+        Z: 1.08222775e-05
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.339797348
+      Pitch: 1.56979632
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 3.07614827
+      Yaw: 3.14113379
     Saved: ~
 Window Geometry:
   Displays:

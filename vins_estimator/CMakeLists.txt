@@ -30,8 +30,7 @@ include_directories(
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(Sophus REQUIRED)
-include_directories(${Sophus_INCLUDE_DIRS})
-
+include_directories( ${Sophus_INCLUDE_DIRS})
 
 message("Sophus_INCLUDE_DIRS" ${Sophus_INCLUDE_DIRS})
 message("Sophus_LIB_DIRS" ${Sophus_LIBRARIES})
@@ -63,7 +62,7 @@ add_library(vins_lib
     src/initial/initial_aligment.cpp
     src/initial/initial_sfm.cpp
     src/initial/initial_ex_rotation.cpp)
-target_link_libraries(vins_lib ${catkin_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})
+target_link_libraries(vins_lib ${catkin_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES} ${Sophus_LIBRARIES})
 
 add_executable(vins_estimator src/estimator_node.cpp)
 target_link_libraries(vins_estimator vins_lib)

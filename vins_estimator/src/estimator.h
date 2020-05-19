@@ -28,6 +28,9 @@
 using Sophus::SE3;
 using Sophus::SO3;
 
+//wh odom factor
+#include "factor/wheel_odom_factor.h"
+
 class Estimator
 {
   public:
@@ -37,6 +40,7 @@ class Estimator
 
     // interface
     void processIMU(double t, const Vector3d &linear_acceleration, const Vector3d &angular_velocity);
+    void processIMUWhOdom(double dt, double dt_wh, const Vector3d linear_vel, const Vector3d wh_ang_vel, const Vector3d &linear_acceleration, const Vector3d &angular_velocity);
     void processImage(const map<int, vector<pair<int, Eigen::Matrix<double, 8, 1>>>> &image, const std_msgs::Header &header);
     void setReloFrame(double _frame_stamp, int _frame_index, vector<Vector3d> &_match_points, Vector3d _relo_t, Matrix3d _relo_r);
 
@@ -81,9 +85,12 @@ class Estimator
 	//VIO state vector
     Vector3d Ps[(WINDOW_SIZE + 1)];
     Vector3d Vs[(WINDOW_SIZE + 1)];
+    Vector3d Pw[(WINDOW_SIZE + 1)];
+    Vector3d Vw[(WINDOW_SIZE + 1)];
     Matrix3d Rs[(WINDOW_SIZE + 1)];
     Vector3d Bas[(WINDOW_SIZE + 1)];
     Vector3d Bgs[(WINDOW_SIZE + 1)];
+    Matrix3d        R0_;
     double td;
 
     Matrix3d back_R0, last_R, last_R0;
@@ -92,6 +99,7 @@ class Estimator
 
     IntegrationBase *pre_integrations[(WINDOW_SIZE + 1)];
     Vector3d acc_0, gyr_0;
+    Vector3d vel_0, angvel_0;
 
     vector<double> dt_buf[(WINDOW_SIZE + 1)];
     vector<Vector3d> linear_acceleration_buf[(WINDOW_SIZE + 1)];
@@ -104,9 +112,11 @@ class Estimator
     MotionEstimator m_estimator;
     InitialEXRotation initial_ex_rotation;
 
-    bool first_imu;
+    bool first_imu, first_wh_odom;
     bool is_valid, is_key;
     bool failure_occur;
+    bool process_wh_odom;
+
 
     vector<Vector3d> point_cloud;
     vector<Vector3d> margin_cloud;
@@ -116,6 +126,7 @@ class Estimator
 
     double para_Pose[WINDOW_SIZE + 1][SIZE_POSE];
     double para_SpeedBias[WINDOW_SIZE + 1][SIZE_SPEEDBIAS];
+    double para_Speed_w[WINDOW_SIZE + 1][3];
     double para_Feature[NUM_OF_F][SIZE_FEATURE];
     double para_Ex_Pose[NUM_OF_CAM][SIZE_POSE];
     double para_Retrive_Pose[SIZE_POSE];

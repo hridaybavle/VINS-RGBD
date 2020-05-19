@@ -26,6 +26,8 @@ void Estimator::clearState()
         Rs[i].setIdentity();
         Ps[i].setZero();
         Vs[i].setZero();
+        Pw[i].setZero();
+        Vw[i].setZero();
         Bas[i].setZero();
         Bgs[i].setZero();
         dt_buf[i].clear();
@@ -51,7 +53,9 @@ void Estimator::clearState()
         }
     }
     solver_flag = INITIAL;
-    first_imu = false,
+    first_imu = false;
+    first_wh_odom = false;
+    process_wh_odom = false;
     sum_of_back = 0;
     sum_of_front = 0;
     frame_count = 0;
@@ -114,6 +118,73 @@ void Estimator::processIMU(double dt, const Vector3d &linear_acceleration, const
     acc_0 = linear_acceleration;
     gyr_0 = angular_velocity;
 }
+
+
+void Estimator::processIMUWhOdom(double dt, double dt_wh, const Vector3d linear_vel, const Vector3d wh_ang_vel,
+                                 const Vector3d &linear_acceleration, const Vector3d &angular_velocity)
+{
+  if (!first_wh_odom)
+  {
+    first_wh_odom = true;
+    acc_0 = linear_acceleration;
+    gyr_0 = angular_velocity;
+    vel_0 = linear_vel;
+    angvel_0 = wh_ang_vel;
+  }
+
+  if (!pre_integrations[frame_count])
+  {
+    pre_integrations[frame_count] = new IntegrationBase{acc_0, gyr_0, Bas[frame_count], Bgs[frame_count]};
+  }
+
+ 
+  if (frame_count != 0)
+  {
+    pre_integrations[frame_count]->push_back(dt, linear_acceleration, angular_velocity);
+    //if(solver_flag != NON_LINEAR)
+    tmp_pre_integration->push_back(dt, linear_acceleration, angular_velocity);
+
+    dt_buf[frame_count].push_back(dt);
+    linear_acceleration_buf[frame_count].push_back(linear_acceleration);
+    angular_velocity_buf[frame_count].push_back(angular_velocity);
+
+    int j = frame_count;
+
+    //imu measurements
+    Vector3d un_acc_0 = Rs[j] * (acc_0 - Bas[j]) - g;
+    Vector3d un_gyr = 0.5 * (gyr_0 + angular_velocity) - Bgs[j];
+    Rs[j] *= Utility::deltaQ(un_gyr * dt).toRotationMatrix();
+    Vector3d un_acc_1 = Rs[j] * (linear_acceleration - Bas[j]) - g;
+    Vector3d un_acc = 0.5 * (un_acc_0 + un_acc_1);
+
+    Ps[j] += dt * Vs[j] + 0.5 * dt * dt * un_acc;
+    Vs[j] += dt * un_acc;
+
+    //adding wh odom vel
+    Matrix3d Rs_wh = Rs[j];
+    //R0_ is the initial camera angle if its tilted
+    //Rs_wh = Rs_wh * R0_.transpose();
+    
+    Vector3d un_angvel = 0.5 * (angvel_0 + wh_ang_vel);
+    Rs_wh *= Utility::deltaQ(un_angvel * dt_wh).toRotationMatrix();
+
+    Eigen::Quaterniond quat_wh(Rs_wh);
+    Vector3d un_vel_0 = Rs_wh * vel_0;
+    Vector3d un_vel_1 = Rs_wh * linear_vel;
+    Vector3d un_vel = 0.5 * (un_vel_0 + un_vel_1);
+
+    Pw[j] = Ps[j] + dt_wh * un_vel_1;
+    Vw[j] = un_vel_1;
+    Ps[j] += dt * Vs[j] + 0.5 * dt * dt * un_acc;
+    Vs[j] += dt * un_acc;
+    process_wh_odom = true;
+  }
+  acc_0 = linear_acceleration;
+  gyr_0 = angular_velocity;
+  vel_0 = linear_vel;
+  angvel_0 = wh_ang_vel;
+}
+
 
 void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<double, 8, 1>>>> &image, const std_msgs::Header &header)
 {
@@ -585,6 +656,13 @@ void Estimator::vector2double()
         para_Pose[i][5] = q.z();
         para_Pose[i][6] = q.w();
 
+        //if(USE_WH_ODOM)
+        {
+          para_Speed_w[i][0] = Vw[i].x();
+          para_Speed_w[i][1] = Vw[i].y();
+          para_Speed_w[i][2] = Vw[i].z();
+        }  
+
         para_SpeedBias[i][0] = Vs[i].x();
         para_SpeedBias[i][1] = Vs[i].y();
         para_SpeedBias[i][2] = Vs[i].z();
@@ -804,6 +882,16 @@ void Estimator::optimization()
             continue;
         IMUFactor* imu_factor = new IMUFactor(pre_integrations[j]);
         problem.AddResidualBlock(imu_factor, NULL, para_Pose[i], para_SpeedBias[i], para_Pose[j], para_SpeedBias[j]);
+
+        if(/*USE_WH_ODOM && */ j==WINDOW_SIZE)
+        {   
+          ceres::CostFunction *cost_function = new ceres::AutoDiffCostFunction<AutoDiffVelCostFunctor, 3, 9, 3>(
+          new AutoDiffVelCostFunctor());
+          //problem.AddParameterBlock(para_Speed_w[j], 3);
+          //problem.SetParameterBlockConstant(para_Speed_w[j]);
+          ROS_INFO("adding wheel odom");
+          problem.AddResidualBlock(cost_function, NULL, para_SpeedBias[j], para_Speed_w[j]); 
+        }
     }
     int f_m_cnt = 0;
     int feature_index = -1;

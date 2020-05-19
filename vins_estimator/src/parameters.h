@@ -12,6 +12,7 @@ const double FOCAL_LENGTH = 460.0;
 const int WINDOW_SIZE = 10;
 const int NUM_OF_CAM = 1;
 const int NUM_OF_F = 1000;
+extern int USE_WH_ODOM;
 //#define UNIT_SPHERE_ERROR
 
 extern double INIT_DEPTH;
