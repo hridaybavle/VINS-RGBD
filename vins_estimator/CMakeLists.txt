@@ -16,14 +16,9 @@ find_package(catkin REQUIRED COMPONENTS
     )
 
 find_package(OpenCV REQUIRED)
-
 # message(WARNING "OpenCV_VERSION: ${OpenCV_VERSION}")
 
 find_package(Ceres REQUIRED)
-
-#find_package( Sophus REQUIRED )
-#include_directories( ${Sophus_INCLUDE_DIRS} )
-
 include_directories(${catkin_INCLUDE_DIRS} ${CERES_INCLUDE_DIRS})
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
@@ -33,10 +28,27 @@ include_directories(
   ${EIGEN3_INCLUDE_DIR}
 )
 
-catkin_package()
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+find_package(Sophus REQUIRED)
+include_directories(${Sophus_INCLUDE_DIRS})
 
-add_executable(vins_estimator
-    src/estimator_node.cpp
+
+message("Sophus_INCLUDE_DIRS" ${Sophus_INCLUDE_DIRS})
+message("Sophus_LIB_DIRS" ${Sophus_LIBRARIES})
+
+
+catkin_package(
+    LIBRARIES vins_lib
+    CATKIN_DEPENDS                
+        roscpp
+        std_msgs
+        geometry_msgs
+        nav_msgs
+        tf
+        cv_bridge
+)
+
+add_library(vins_lib
     src/parameters.cpp
     src/estimator.cpp
     src/feature_manager.cpp
@@ -50,10 +62,11 @@ add_executable(vins_estimator
     src/initial/solve_5pts.cpp
     src/initial/initial_aligment.cpp
     src/initial/initial_sfm.cpp
-    src/initial/initial_ex_rotation.cpp
-    )
+    src/initial/initial_ex_rotation.cpp)
+target_link_libraries(vins_lib ${catkin_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})
 
+add_executable(vins_estimator src/estimator_node.cpp)
+target_link_libraries(vins_estimator vins_lib)
 
-target_link_libraries(vins_estimator ${catkin_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES} /usr/local/lib/libSophus.so)
-
-
+add_executable(imu_wheel_estimator src/imu_wheel_estimator_node.cpp)
+target_link_libraries(imu_wheel_estimator vins_lib) 

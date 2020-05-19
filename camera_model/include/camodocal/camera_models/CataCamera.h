@@ -4,7 +4,7 @@
 #include <opencv2/core/core.hpp>
 #include <string>
 
-#include "ceres/rotation.h"
+#include <ceres/rotation.h>
 #include "Camera.h"
 
 namespace camodocal

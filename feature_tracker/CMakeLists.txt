@@ -17,9 +17,11 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(OpenCV REQUIRED)
 
 catkin_package()
+find_package(Ceres REQUIRED)
 
 include_directories(
     ${catkin_INCLUDE_DIRS}
+    ${CERES_INCLUDE_DIRS}
     )
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
