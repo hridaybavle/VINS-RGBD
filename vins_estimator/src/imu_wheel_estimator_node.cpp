@@ -363,6 +363,7 @@ void process()
         {
             auto img_msg = std::get<2>(measurement);
             double dx = 0, dy = 0, dz = 0, rx = 0, ry = 0, rz = 0;
+            double vx = 0, wh_rz = 0;
             auto imu_msg = std::get<0>(measurement);
             auto wh_msg  = std::get<1>(measurement);
             for (size_t i = 0; i < imu_msg.size(); ++i)
@@ -398,8 +399,7 @@ void process()
                     else
                     {  
                       double dt_wh; 
-                      if(i == 0)
-                      {
+                      if(i == 0){
                         dt_wh = wh_t - current_time;
                         current_time_wh = wh_t;
                       }
@@ -407,7 +407,7 @@ void process()
                           dt_wh = wh_t - current_time_wh;
                       }
                       
-                      double vx = wh_msg[i].twist.twist.linear.x; double wh_rz = wh_msg[i].twist.twist.angular.z;
+                      vx = wh_msg[i].twist.twist.linear.x; wh_rz = wh_msg[i].twist.twist.angular.z;
                       estimator.processIMUWhOdom(dt, dt_wh, Vector3d(vx,0,0), Vector3d(0,0,wh_rz), Vector3d(dx, dy, dz), Vector3d(rx, ry, rz));                    
                     }       
                     //printf("imu: dt:%f a: %f %f %f w: %f %f %f\n",dt, dx, dy, dz, rx, ry, rz);
@@ -416,8 +416,7 @@ void process()
                 else
                 {
                     double dt_1 = img_t - current_time;
-                    double dt_2 = t - img_t;
-                    current_time = img_t;
+                    double dt_2 = t - img_t;                       
                     ROS_ASSERT(dt_1 >= 0);
                     ROS_ASSERT(dt_2 >= 0);
                     ROS_ASSERT(dt_1 + dt_2 > 0);
@@ -428,9 +427,31 @@ void process()
                     dz = w1 * dz + w2 * imu_msg[i]->linear_acceleration.z;
                     rx = w1 * rx + w2 * imu_msg[i]->angular_velocity.x;
                     ry = w1 * ry + w2 * imu_msg[i]->angular_velocity.y;
-                    rz = w1 * rz + w2 * imu_msg[i]->angular_velocity.z;
-                    estimator.processIMU(dt_1, Vector3d(dx, dy, dz), Vector3d(rx, ry, rz));
-                    //printf("dimu: dt:%f a: %f %f %f w: %f %f %f\n",dt_1, dx, dy, dz, rx, ry, rz);
+                    rz = w1 * rz + w2 * imu_msg[i]->angular_velocity.z;                 
+                    
+                    if(wh_odom_avail && wh_t > img_t){
+
+                        double dt_wh_1 = img_t - current_time;
+                        double dt_wh_2 = wh_t - img_t;
+                        ROS_ASSERT(dt_wh_1 >= 0);
+                        ROS_ASSERT(dt_wh_2 >= 0);
+                        ROS_ASSERT(dt_wh_1 + dt_wh_2 > 0);
+
+                        double w_wh_1 = dt_wh_2 / (dt_wh_1 + dt_wh_2);
+                        double w_wh_2 = dt_wh_1 / (dt_wh_1 + dt_wh_2);
+
+                        vx    = w_wh_1 * vx + w_wh_2 * wh_msg[i].twist.twist.linear.x;
+                        wh_rz = w_wh_1 * wh_rz + w_wh_2 * wh_msg[i].twist.twist.angular.z;
+
+                        estimator.processIMUWhOdom(dt_1, dt_wh_1, Vector3d(vx,0,0), Vector3d(0,0,wh_rz), Vector3d(dx, dy, dz), Vector3d(rx, ry, rz));                                                                      
+                    }
+                    else {
+                         estimator.processIMU(dt_1, Vector3d(dx, dy, dz), Vector3d(rx, ry, rz));
+                         //printf("dimu: dt:%f a: %f %f %f w: %f %f %f\n",dt_1, dx, dy, dz, rx, ry, rz);
+                    }
+                    current_time = img_t;
+
+
                 }
             }
             // set relocalization frame
