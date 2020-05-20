@@ -18,6 +18,7 @@ Estimator estimator;
 
 std::condition_variable con;
 double current_time = -1;
+double current_time_wh = -1;
 queue<sensor_msgs::ImuConstPtr> imu_buf;
 queue<nav_msgs::Odometry> wh_odom_buf;
 queue<sensor_msgs::PointCloudConstPtr> feature_buf;
@@ -223,10 +224,13 @@ getAllMeasurements()
             IMUs.emplace_back(imu_buf.front());
             imu_buf.pop();
 
-            if(wh_odom_buf.front().header.stamp.toSec() < img_msg->header.stamp.toSec() + estimator.td && !wh_odom_buf.empty())
+            if(!wh_odom_buf.empty())
             {
-             wh_odoms.emplace_back(wh_odom_buf.front());
-             wh_odom_buf.pop();   
+                if(wh_odom_buf.front().header.stamp.toSec() < img_msg->header.stamp.toSec() + estimator.td)
+                {
+                    wh_odoms.emplace_back(wh_odom_buf.front());
+                    wh_odom_buf.pop();   
+                }
             }
         }
         IMUs.emplace_back(imu_buf.front());
@@ -392,8 +396,17 @@ void process()
                         estimator.processIMU(dt, Vector3d(dx, dy, dz), Vector3d(rx, ry, rz));   
                     }
                     else
-                    {   
-                      double dt_wh = wh_t - current_time;
+                    {  
+                      double dt_wh; 
+                      if(i == 0)
+                      {
+                        dt_wh = wh_t - current_time;
+                        current_time_wh = wh_t;
+                      }
+                      else {
+                          dt_wh = wh_t - current_time_wh;
+                      }
+                      
                       double vx = wh_msg[i].twist.twist.linear.x; double wh_rz = wh_msg[i].twist.twist.angular.z;
                       estimator.processIMUWhOdom(dt, dt_wh, Vector3d(vx,0,0), Vector3d(0,0,wh_rz), Vector3d(dx, dy, dz), Vector3d(rx, ry, rz));                    
                     }       

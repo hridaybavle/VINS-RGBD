@@ -14,8 +14,8 @@ void Estimator::setParameter()
         ric[i] = RIC[i];
     }
     f_manager.setRic(ric);
-    ProjectionFactor::sqrt_info = FOCAL_LENGTH / 1.5 * Matrix2d::Identity();
-    ProjectionTdFactor::sqrt_info = FOCAL_LENGTH / 1.5 * Matrix2d::Identity();
+    ProjectionFactor::sqrt_info = /*FOCAL_LENGTH / 1.5*/ 100 * Matrix2d::Identity();
+    ProjectionTdFactor::sqrt_info = /*FOCAL_LENGTH / 1.5*/ 100 * Matrix2d::Identity();
     td = TD;
 }
 
@@ -889,7 +889,7 @@ void Estimator::optimization()
           new AutoDiffVelCostFunctor());
           //problem.AddParameterBlock(para_Speed_w[j], 3);
           //problem.SetParameterBlockConstant(para_Speed_w[j]);
-          ROS_INFO("adding wheel odom");
+          //ROS_INFO("adding wheel odom");
           problem.AddResidualBlock(cost_function, NULL, para_SpeedBias[j], para_Speed_w[j]); 
         }
     }
