@@ -208,10 +208,10 @@ getAllMeasurements()
             continue;
         }
         
-        if(wh_odom_buf.front().header.stamp.toSec() > feature_buf.front()->header.stamp.toSec() + estimator.td)
+        //if(wh_odom_buf.back().header.stamp.toSec() > imu_buf.back()->header.stamp.toSec())
         {
-           ROS_WARN("Throwing wheel odom msg as it is ahead of the image msg");
-           wh_odom_buf.pop();     
+        //   ROS_WARN("Throwing wheel odom msg as it is ahead of the imu msg");
+        //   wh_odom_buf.pop();     
         }
         
         sensor_msgs::PointCloudConstPtr img_msg = feature_buf.front();
@@ -429,7 +429,8 @@ void process()
                     ry = w1 * ry + w2 * imu_msg[i]->angular_velocity.y;
                     rz = w1 * rz + w2 * imu_msg[i]->angular_velocity.z;                 
                     
-                    if(wh_odom_avail && wh_t > img_t){
+                    if(wh_odom_avail && wh_t > img_t)
+                    {
 
                         double dt_wh_1 = img_t - current_time;
                         double dt_wh_2 = wh_t - img_t;
@@ -450,8 +451,6 @@ void process()
                          //printf("dimu: dt:%f a: %f %f %f w: %f %f %f\n",dt_1, dx, dy, dz, rx, ry, rz);
                     }
                     current_time = img_t;
-
-
                 }
             }
             // set relocalization frame

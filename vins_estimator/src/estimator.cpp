@@ -14,7 +14,7 @@ void Estimator::setParameter()
         ric[i] = RIC[i];
     }
     f_manager.setRic(ric);
-    ProjectionFactor::sqrt_info = FOCAL_LENGTH / 1.5 * Matrix2d::Identity();
+    ProjectionFactor::sqrt_info   = FOCAL_LENGTH / 1.5 * Matrix2d::Identity();
     ProjectionTdFactor::sqrt_info = FOCAL_LENGTH / 1.5 * Matrix2d::Identity();
     td = TD;
 }
@@ -26,7 +26,7 @@ void Estimator::clearState()
         Rs[i].setIdentity();
         Ps[i].setZero();
         Vs[i].setZero();
-        Pw[i].setZero();
+        //Pw[i].setZero();
         Vw[i].setZero();
         Bas[i].setZero();
         Bgs[i].setZero();
@@ -173,7 +173,7 @@ void Estimator::processIMUWhOdom(double dt, double dt_wh, const Vector3d linear_
     Vector3d un_vel_1 = Rs_wh * linear_vel;
     Vector3d un_vel = 0.5 * (un_vel_0 + un_vel_1);
 
-    Pw[j] = Ps[j] + dt_wh * un_vel_1;
+    //Pw[j] = Ps[j] + dt_wh * un_vel_1;
     Vw[j] = un_vel_1;
     Ps[j] += dt * Vs[j] + 0.5 * dt * dt * un_acc;
     Vs[j] += dt * un_acc;
@@ -741,6 +741,14 @@ void Estimator::double2vector()
         Bgs[i] = Vector3d(para_SpeedBias[i][6],
                           para_SpeedBias[i][7],
                           para_SpeedBias[i][8]);
+
+        //if(USE_WH_ODOM)
+        {
+          Vw[i] = rot_diff * Vector3d(para_Speed_w[i][0],
+                                      para_Speed_w[i][1],
+                                      para_Speed_w[i][2]);      
+        }
+
     }
 
     for (int i = 0; i < NUM_OF_CAM; i++)
@@ -883,14 +891,22 @@ void Estimator::optimization()
         IMUFactor* imu_factor = new IMUFactor(pre_integrations[j]);
         problem.AddResidualBlock(imu_factor, NULL, para_Pose[i], para_SpeedBias[i], para_Pose[j], para_SpeedBias[j]);
 
-        if(/*USE_WH_ODOM && */ j==WINDOW_SIZE)
+        //if(/*USE_WH_ODOM && */ j==WINDOW_SIZE)
         {   
           ceres::CostFunction *cost_function = new ceres::AutoDiffCostFunction<AutoDiffVelCostFunctor, 3, 9, 3>(
           new AutoDiffVelCostFunctor());
-          //problem.AddParameterBlock(para_Speed_w[j], 3);
-          //problem.SetParameterBlockConstant(para_Speed_w[j]);
+
           //ROS_INFO("adding wheel odom");
-          problem.AddResidualBlock(cost_function, NULL, para_SpeedBias[j], para_Speed_w[j]); 
+          if(j!=WINDOW_SIZE) {
+            problem.AddParameterBlock(para_Speed_w[i], 3);
+            problem.SetParameterBlockConstant(para_Speed_w[i]); 
+            problem.AddResidualBlock(cost_function, NULL, para_SpeedBias[i], para_Speed_w[i]);
+          }
+          else{
+            problem.AddParameterBlock(para_Speed_w[j], 3);
+            problem.SetParameterBlockConstant(para_Speed_w[j]);   
+            problem.AddResidualBlock(cost_function, NULL, para_SpeedBias[j], para_Speed_w[j]); 
+          }
         }
     }
     int f_m_cnt = 0;
@@ -1224,6 +1240,12 @@ void Estimator::slideWindow()
                 Vs[i].swap(Vs[i + 1]);
                 Bas[i].swap(Bas[i + 1]);
                 Bgs[i].swap(Bgs[i + 1]);
+
+                 //if (USE_WH_ODOM)
+                 {
+                    //Pw[i].swap(Pw[i + 1]);
+                    Vw[i].swap(Vw[i + 1]);
+                 }
             }
             Headers[WINDOW_SIZE] = Headers[WINDOW_SIZE - 1];
             Ps[WINDOW_SIZE] = Ps[WINDOW_SIZE - 1];
@@ -1284,6 +1306,12 @@ void Estimator::slideWindow()
 
             delete pre_integrations[WINDOW_SIZE];
             pre_integrations[WINDOW_SIZE] = new IntegrationBase{acc_0, gyr_0, Bas[WINDOW_SIZE], Bgs[WINDOW_SIZE]};
+
+            //if (USE_WH_ODOM)
+            {
+                //Pw[frame_count - 1] = Pw[frame_count];
+                Vw[frame_count - 1] = Vw[frame_count];
+            }
 
             dt_buf[WINDOW_SIZE].clear();
             linear_acceleration_buf[WINDOW_SIZE].clear();
