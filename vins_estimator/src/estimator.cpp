@@ -800,7 +800,7 @@ bool Estimator::failureDetection()
         ROS_INFO(" little feature %d", f_manager.last_track_num);
         //return true;
     }
-    if (Bas[WINDOW_SIZE].norm() > 2.5)
+    if (Bas[WINDOW_SIZE].norm() > 3.5)
     {
         ROS_INFO(" big IMU acc bias estimation %f", Bas[WINDOW_SIZE].norm());
         return true;
@@ -898,13 +898,13 @@ void Estimator::optimization()
 
           //ROS_INFO("adding wheel odom");
           if(j!=WINDOW_SIZE) {
-            problem.AddParameterBlock(para_Speed_w[i], 3);
-            problem.SetParameterBlockConstant(para_Speed_w[i]); 
+            //problem.AddParameterBlock(para_Speed_w[i], 3);
+            //problem.SetParameterBlockConstant(para_Speed_w[i]); 
             problem.AddResidualBlock(cost_function, NULL, para_SpeedBias[i], para_Speed_w[i]);
           }
           else{
-            problem.AddParameterBlock(para_Speed_w[j], 3);
-            problem.SetParameterBlockConstant(para_Speed_w[j]);   
+            //problem.AddParameterBlock(para_Speed_w[j], 3);
+            //problem.SetParameterBlockConstant(para_Speed_w[j]);   
             problem.AddResidualBlock(cost_function, NULL, para_SpeedBias[j], para_Speed_w[j]); 
           }
         }

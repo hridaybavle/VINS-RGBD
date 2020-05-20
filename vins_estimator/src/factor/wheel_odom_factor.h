@@ -21,8 +21,8 @@ public:
                   const T* const y,
                   T* residuals) const {
 
-    double var = 0.09;
-    double var_z = 0.09;
+    double var = 9e-5;
+    double var_z = 9e-9;
     residuals[0] = (x[0] -  y[0])/ var;
     residuals[1] = (x[1] -  y[1])/ var;
     residuals[2] = (x[2] -  y[2])/ var_z;

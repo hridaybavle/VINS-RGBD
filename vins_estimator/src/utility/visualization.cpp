@@ -139,6 +139,7 @@ void pubOdometry(const Estimator &estimator, const std_msgs::Header &header)
         odometry.twist.twist.linear.z = estimator.Vs[WINDOW_SIZE].z();
         //"odometry"
         pub_odometry.publish(odometry);
+        ROS_ERROR("Position:%f,%f,%f",estimator.Ps[WINDOW_SIZE].x(),estimator.Ps[WINDOW_SIZE].x(),estimator.Ps[WINDOW_SIZE].z());
 
         Vector3d delta_p = estimator.Ps[WINDOW_SIZE] - estimator.Ps[WINDOW_SIZE-2];
         Vector3d delta_v = estimator.Vs[WINDOW_SIZE] - estimator.Vs[WINDOW_SIZE-2];
