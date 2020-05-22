@@ -277,7 +277,7 @@ void imu_callback(const sensor_msgs::ImuConstPtr &imu_msg)
     bool predict_with_wh = false;
     m_buf.lock();
     imu_buf.push(imu_msg);
-    if(t_wh >= last_imu_t - 0.02 && t_wh <= last_imu_t + 0.02 && fabs(wh_odom_msg.twist.twist.linear.x) < 3)
+    if(t_wh >= last_imu_t - 0.02 && t_wh <= last_imu_t + 0.02 && fabs(wh_odom_msg.twist.twist.linear.x) < 1)
     {   
         ROS_WARN("Adding Odom with IMU");
         wh_odom_buf.push(wh_odom_msg);
