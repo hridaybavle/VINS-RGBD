@@ -22,6 +22,7 @@ std::string VINS_RESULT_PATH;
 std::string IMU_TOPIC;
 double ROW, COL;
 double TD, TR;
+int USE_WH_ODOM;
 
 template <typename T>
 T readParam(ros::NodeHandle &n, std::string name)

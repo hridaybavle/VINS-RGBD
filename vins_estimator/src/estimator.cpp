@@ -656,7 +656,7 @@ void Estimator::vector2double()
         para_Pose[i][5] = q.z();
         para_Pose[i][6] = q.w();
 
-        //if(USE_WH_ODOM)
+        if(USE_WH_ODOM)
         {
           para_Speed_w[i][0] = Vw[i].x();
           para_Speed_w[i][1] = Vw[i].y();
@@ -742,7 +742,7 @@ void Estimator::double2vector()
                           para_SpeedBias[i][7],
                           para_SpeedBias[i][8]);
 
-        //if(USE_WH_ODOM)
+        if(USE_WH_ODOM)
         {
           Vw[i] = rot_diff * Vector3d(para_Speed_w[i][0],
                                       para_Speed_w[i][1],
@@ -891,7 +891,7 @@ void Estimator::optimization()
         IMUFactor* imu_factor = new IMUFactor(pre_integrations[j]);
         problem.AddResidualBlock(imu_factor, NULL, para_Pose[i], para_SpeedBias[i], para_Pose[j], para_SpeedBias[j]);
 
-        //if(/*USE_WH_ODOM && */ j==WINDOW_SIZE)
+        if(USE_WH_ODOM)
         {   
           ceres::CostFunction *cost_function = new ceres::AutoDiffCostFunction<AutoDiffVelCostFunctor, 3, 9, 3>(
           new AutoDiffVelCostFunctor());
@@ -1241,7 +1241,7 @@ void Estimator::slideWindow()
                 Bas[i].swap(Bas[i + 1]);
                 Bgs[i].swap(Bgs[i + 1]);
 
-                 //if (USE_WH_ODOM)
+                 if (USE_WH_ODOM)
                  {
                     //Pw[i].swap(Pw[i + 1]);
                     Vw[i].swap(Vw[i + 1]);
@@ -1307,7 +1307,7 @@ void Estimator::slideWindow()
             delete pre_integrations[WINDOW_SIZE];
             pre_integrations[WINDOW_SIZE] = new IntegrationBase{acc_0, gyr_0, Bas[WINDOW_SIZE], Bgs[WINDOW_SIZE]};
 
-            //if (USE_WH_ODOM)
+            if (USE_WH_ODOM)
             {
                 //Pw[frame_count - 1] = Pw[frame_count];
                 Vw[frame_count - 1] = Vw[frame_count];

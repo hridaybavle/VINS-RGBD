@@ -550,7 +550,7 @@ int main(int argc, char **argv)
     ROS_WARN("waiting for image and imu...");
     registerPub(n);
     
-    //USE_WH_ODOM = 1;
+    USE_WH_ODOM = 1;
 
     ros::Subscriber sub_imu = n.subscribe(IMU_TOPIC, 2000, imu_callback, ros::TransportHints().tcpNoDelay());
     ros::Subscriber sub_wh_odom = n.subscribe("/velocity_controller/odom", 2000, wh_odom_callback, ros::TransportHints().tcpNoDelay());
